@@ -30,9 +30,15 @@ def data_preprocessing(data_file):
 
 def main():
     # Some basic tests for gergen class
-    g = gergen()
+    # g1 = rastgele_dogal((2,2))
+    # g2 = gergen([1,2,3])
+    # print(g1.us(2))
+    # print(g2.us(2))
+
+    g1 = rastgele_dogal((2,2))
 
 if __name__ == "__main__":
+    cekirdek(2)
     # data_file = "./path_to_data"
     # main(data_file)
     main()

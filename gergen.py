@@ -326,18 +326,18 @@ class TrueDiv(Operation):
         Returns:
             Tuple: Gradients w.r.t each operand.
         """
-        a, b = self.operands
+        a, b = self.operands[0], self.operands[1]
         if isinstance(a, gergen) and isinstance(b, gergen):
             # Gradient w.r.t a is grad_input / b
-            grad_a = grad_input / b.veri
+            grad_a = grad_input / b # Assuming grad_input is not a scalar
             # Gradient w.r.t b is -grad_input * a / (b ** 2)
-            grad_b = (-grad_input * a.veri) / (b.us(2).veri)
+            grad_b = (-grad_input * a) / (b.us(2))
             return grad_a, grad_b
         elif isinstance(a, gergen) and isinstance(b, (int, float)):
             # When b is a scalar, the gradient w.r.t a is grad_input / b
-            grad_a = grad_input / b
+            grad_a = grad_input / b # Assuming grad_input is not a scalar
             # There is no gradient w.r.t to a scalar in the context of training neural networks
-            return grad_a, None
+            return grad_a, 0
         else:
             raise NotImplementedError("Backpropagation for the division of a scalar by a gergen object is not supported.")
 
@@ -411,7 +411,7 @@ class Mul(Operation):
         Returns:
             Tuple: Gradients w.r.t each operand.
         """
-        a, b = self.operands
+        a, b = self.operands[0], self.operands[1]
         if isinstance(a, gergen) and isinstance(b, gergen):
             # Gradient w.r.t a is grad_input * b
             grad_a = grad_input * b.veri
@@ -478,21 +478,21 @@ class Us(Operation):
         Returns:
             Tuple: Gradients w.r.t each operand.
         """
-        a = self.operands[0]
-        grad_a = grad_input * self.n * (a.veri ** (self.n - 1))
+        a, n = self.operands[0], self.n
+        grad_a = grad_input * n * (a.us(n - 1))
         return grad_a, 0
 
 class Log10(Operation):
-    """
-    Log10 operation
-    
-    Parameters:
-        a (gergen): The input gergen object.
-    
-    Returns:
-        gergen: The result of the log10 operation.
-    """
     def ileri(self, a):
+        """
+        Log10 operation
+
+        Parameters:
+            a (gergen): The input gergen object.
+
+        Returns:
+            gergen: The result of the log10 operation.
+        """
         self.a = a
         self.operands = [a]
         # Recursively check for non-positive values in the nested list structure
@@ -522,6 +522,7 @@ class Log10(Operation):
             return flag
         # Use 'any' on a flattened generator of boolean values
         return check_and_flatten(a)
+    
     def multiply_elements(self, a, scalar):
         # Recursively multiply each element by the scalar
         if isinstance(a, list):
@@ -537,10 +538,21 @@ class Log10(Operation):
             return grad_output / b
 
     def geri(self, grad_input):
-        '''
-        TODO (Optional): Implement the gradient computation for the Log10 operation.
-        '''
-        pass
+        """
+        Computes the backward pass of the Log10 operation.
+
+        Parameters:
+            grad_input: The gradient of the loss w.r.t the output of this operation.
+
+        Returns:
+            gergen: The gradient of the loss w.r.t the input of this operation.
+        """
+        a = self.operands[0]
+        # Calculate the gradient w.r.t a using the properties of logarithmic differentiation
+        # Gradient w.r.t a is: grad_input * (1 / (a * ln(10)))
+        ln10 = math.log(10)
+        grad_a = grad_input * (1 / (a * ln10))
+        return grad_a
 
 class Ln(Operation):
     def ileri(self, a):
@@ -585,10 +597,20 @@ class Ln(Operation):
         return check_and_flatten(a)
 
     def geri(self, grad_input):
-        '''
-        TODO: Implement the gradient computation for the Ln operation.
-        '''
-        pass
+        """
+        Computes the backward pass of the Ln operation.
+
+        Parameters:
+            grad_input: The gradient of the loss w.r.t the output of this operation.
+
+        Returns:
+            gergen: The gradient of the loss w.r.t the input of this operation.
+        """
+        a = self.operands[0]
+        # Calculate the gradient w.r.t a using the properties of logarithmic differentiation
+        # Gradient w.r.t a is: grad_input * (1 / a)
+        grad_a = grad_input / a
+        return grad_a
 
 def apply_elementwise(g, func):
     """
@@ -630,9 +652,13 @@ class Sin(Operation):
 
     def geri(self, grad_output):
         """
-        TODO(Optional): Implement the gradient computation for the Sin operation.
+        Computes the backward pass of the Sin operation.
         """
-        pass
+        a = self.operands[0]
+        # The gradient with respect to a is grad_output multiplied by the derivative of sin(a), which is cos(a).
+        cos_a = apply_elementwise(a, math.cos)
+        grad_a = grad_output * cos_a
+        return grad_a
 
 class Cos(Operation):
     def ileri(self, a):
@@ -651,9 +677,13 @@ class Cos(Operation):
 
     def geri(self, grad_output):
         """
-        TODO(Optional): Implement the gradient computation for the Cos operation.
+        Computes the backward pass of the Cos operation.
         """
-        pass
+        a = self.operands[0]
+        # The gradient with respect to a is grad_output multiplied by the derivative of cos(a), which is -sin(a).
+        sin_a = apply_elementwise(a, math.sin)
+        grad_a = grad_output * -sin_a
+        return grad_a
 
 class Tan(Operation):
     def ileri(self, a):
@@ -672,9 +702,13 @@ class Tan(Operation):
 
     def geri(self, grad_output):
         """
-        TODO(Optional): Implement the gradient computation for the Tan operation.
+        Computes the backward pass of the Tan operation.
         """
-        pass
+        a = self.operands[0]
+        # The gradient with respect to a is grad_output multiplied by the derivative of tan(a), which is sec^2(a).
+        sec2_a = apply_elementwise(a, lambda x: 1 / math.cos(x)**2)
+        grad_a = grad_output * sec2_a
+        return grad_a
 
 class Topla(Operation):
     def ileri(self, a, eksen=None):
