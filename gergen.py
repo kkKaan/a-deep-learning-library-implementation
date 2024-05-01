@@ -134,9 +134,7 @@ class Add(Operation):
             self.a = a
             self.b = b
             self.operands = [a, b]
-            result = gergen(self.add_gergen(a.duzlestir().listeye(),
-                                            b.duzlestir().listeye()),
-                            operation=self)
+            result = gergen(self.add_gergen(a.duzlestir().listeye(), b.duzlestir().listeye()), operation=self)
             result.boyutlandir(a.boyut())
         elif isinstance(a, gergen) and isinstance(b, (list)):
             self.a = a
@@ -159,8 +157,7 @@ class Add(Operation):
             self.operands = [b]
             result = gergen(self.add_scalar(b.listeye(), a), operation=self)
         else:
-            raise ValueError(
-                "Add operation requires at least one gergen operand.")
+            raise ValueError("Add operation requires at least one gergen operand.")
 
         return result
 
@@ -176,9 +173,7 @@ class Add(Operation):
             # Check if 'b' is a list
             if isinstance(b, list):
                 if len(a) != len(b):
-                    raise ValueError(
-                        "Dimensions of gergen objects do not match for addition."
-                    )
+                    raise ValueError("Dimensions of gergen objects do not match for addition.")
                 return [a[i] + b[i] for i in range(len(a))]
             # If 'a' is a list and 'b' is a scalar
             elif not isinstance(b, list):
@@ -194,9 +189,7 @@ class Add(Operation):
     def add_list(self, a, b):
         # Check if 'a' is a list
         if isinstance(a, list) and isinstance(b, list):
-            return [
-                self.add_list(elem_a, elem_b) for elem_a, elem_b in zip(a, b)
-            ]
+            return [self.add_list(elem_a, elem_b) for elem_a, elem_b in zip(a, b)]
         # If 'a' is list and b is scalar
         elif isinstance(a, list) and not isinstance(b, list):
             return [self.add_list(elem_a, b) for elem_a in a]
@@ -229,9 +222,7 @@ class Sub(Operation):
         if isinstance(a, gergen) and isinstance(b, gergen):
             self.a, self.b = a, b
             self.operands = [a, b]
-            result = gergen(self.subtract_gergen(a.duzlestir().veri,
-                                                 b.duzlestir().veri),
-                            operation=self)
+            result = gergen(self.subtract_gergen(a.duzlestir().veri, b.duzlestir().veri), operation=self)
             result.boyutlandir(a.boyut())
         elif isinstance(a, gergen) and isinstance(b, (list)):
             self.a = a
@@ -254,8 +245,7 @@ class Sub(Operation):
             self.operands = [b]
             result = gergen(self.subtract_scalar(b.veri, a), operation=self)
         else:
-            raise ValueError(
-                "Sub operation requires at least one gergen operand.")
+            raise ValueError("Sub operation requires at least one gergen operand.")
         return result
 
     def subtract_scalar(self, a, scalar):
@@ -267,10 +257,7 @@ class Sub(Operation):
     def subtract_list(self, a, b):
         # Check if 'b' is a list
         if isinstance(a, list) and isinstance(b, list):
-            return [
-                self.subtract_list(elem_a, elem_b)
-                for elem_a, elem_b in zip(a, b)
-            ]
+            return [self.subtract_list(elem_a, elem_b) for elem_a, elem_b in zip(a, b)]
         # If 'a' is list and b is scalar
         elif isinstance(a, list) and not isinstance(b, list):
             return [self.subtract_list(elem_a, b) for elem_a in a]
@@ -285,9 +272,7 @@ class Sub(Operation):
             # Check if 'b' is a list
             if isinstance(b, list):
                 if len(a) != len(b):
-                    raise ValueError(
-                        "Dimensions of gergen objects do not match for subtraction."
-                    )
+                    raise ValueError("Dimensions of gergen objects do not match for subtraction.")
                 return [a[i] - b[i] for i in range(len(a))]
             # If 'a' is a list and 'b' is a scalar
             elif not isinstance(b, list):
@@ -323,9 +308,7 @@ class TrueDiv(Operation):
         if isinstance(a, gergen) and isinstance(b, gergen):
             self.a, self.b = a, b
             self.operands = [a, b]
-            result = gergen(self.divide_elements(a.duzlestir().veri,
-                                                 b.duzlestir().veri),
-                            operation=self)
+            result = gergen(self.divide_elements(a.duzlestir().veri, b.duzlestir().veri), operation=self)
             result.boyutlandir(a.boyut())
         elif isinstance(a, gergen) and isinstance(b, (int, float)):
             self.a = a
@@ -335,11 +318,9 @@ class TrueDiv(Operation):
         elif isinstance(b, gergen) and isinstance(a, (int, float)):
             # Division of a scalar by a gergen object is not typically defined,
             # but you can implement it based on your requirements.
-            raise NotImplementedError(
-                "Division of a scalar by a gergen object is not implemented.")
+            raise NotImplementedError("Division of a scalar by a gergen object is not implemented.")
         else:
-            raise ValueError(
-                "TrueDiv operation requires at least one gergen operand.")
+            raise ValueError("TrueDiv operation requires at least one gergen operand.")
 
         return result
 
@@ -360,18 +341,13 @@ class TrueDiv(Operation):
         # Both a and b are lists, perform element-wise division
         elif isinstance(a, list) and isinstance(b, list):
             if len(a) != len(b):
-                raise ValueError(
-                    "Dimensions of gergen objects do not match for division.")
-            return [
-                self.divide_elements(elem_a, elem_b)
-                for elem_a, elem_b in zip(a, b)
-            ]
+                raise ValueError("Dimensions of gergen objects do not match for division.")
+            return [self.divide_elements(elem_a, elem_b) for elem_a, elem_b in zip(a, b)]
         # One of a or b is a list and the other is a scalar, divide each element of the list by the scalar
         elif isinstance(a, list):
             return [self.divide_elements(elem, b) for elem in a]
         else:
-            raise NotImplementedError(
-                "Division of scalar by a list is not typically defined.")
+            raise NotImplementedError("Division of scalar by a list is not typically defined.")
 
     def geri(self, grad_input):
         """
@@ -397,8 +373,7 @@ class TrueDiv(Operation):
             return grad_a
         else:
             raise NotImplementedError(
-                "Backpropagation for the division of a scalar by a gergen object is not supported."
-            )
+                "Backpropagation for the division of a scalar by a gergen object is not supported.")
 
 
 class Mul(Operation):
@@ -419,12 +394,10 @@ class Mul(Operation):
             self.operands = [a, b]
             # a is a scalar gergen
             if a.uzunluk() == 1:
-                result = gergen(self.multiply_scalar(b.veri, a.veri),
-                                operation=self)
+                result = gergen(self.multiply_scalar(b.veri, a.veri), operation=self)
             # b is a scalar gergen
             elif b.uzunluk() == 1:
-                result = gergen(self.multiply_scalar(a.veri, b.veri),
-                                operation=self)
+                result = gergen(self.multiply_scalar(a.veri, b.veri), operation=self)
             else:
                 result = gergen(self.multiply_elements(a.duzlestir().veri,
                                                        b.duzlestir().veri),
@@ -441,8 +414,7 @@ class Mul(Operation):
             self.operands = [b]
             result = gergen(self.multiply_scalar(b.veri, a), operation=self)
         else:
-            raise ValueError(
-                "Mul operation requires at least one gergen operand.")
+            raise ValueError("Mul operation requires at least one gergen operand.")
 
         return result
 
@@ -459,13 +431,8 @@ class Mul(Operation):
         # Both a and b are lists, perform element-wise multiplication
         elif isinstance(a, list) and isinstance(b, list):
             if len(a) != len(b):
-                raise ValueError(
-                    "Dimensions of gergen objects do not match for multiplication."
-                )
-            return [
-                self.multiply_elements(elem_a, elem_b)
-                for elem_a, elem_b in zip(a, b)
-            ]
+                raise ValueError("Dimensions of gergen objects do not match for multiplication.")
+            return [self.multiply_elements(elem_a, elem_b) for elem_a, elem_b in zip(a, b)]
         # One of a or b is a list and the other is a scalar, multiply each element of the list by the scalar
         elif isinstance(a, list):
             return [self.multiply_elements(elem, b) for elem in a]
@@ -521,13 +488,8 @@ class Us(Operation):
         # Both a and b are lists, perform element-wise multiplication
         elif isinstance(a, list) and isinstance(b, list):
             if len(a) != len(b):
-                raise ValueError(
-                    "Dimensions of gergen objects do not match for multiplication."
-                )
-            return [
-                self.multiply_elements(elem_a, elem_b)
-                for elem_a, elem_b in zip(a, b)
-            ]
+                raise ValueError("Dimensions of gergen objects do not match for multiplication.")
+            return [self.multiply_elements(elem_a, elem_b) for elem_a, elem_b in zip(a, b)]
         # One of a or b is a list and the other is a scalar, multiply each element of the list by the scalar
         elif isinstance(a, list):
             return [self.multiply_elements(elem, b) for elem in a]
@@ -602,10 +564,7 @@ class Log10(Operation):
     def divide_elements(self, grad_output, b):
         # Recursively divide grad_output by b, assuming they have the same structure
         if isinstance(b, list):
-            return [
-                self.divide_elements(elem_grad, elem_b)
-                for elem_grad, elem_b in zip(grad_output, b)
-            ]
+            return [self.divide_elements(elem_grad, elem_b) for elem_grad, elem_b in zip(grad_output, b)]
         else:
             return grad_output / b
 
@@ -826,8 +785,7 @@ class Topla(Operation):
             result = sum(a.duzlestir().listeye())
         elif isinstance(eksen, int):
             if eksen < 0 or eksen >= len(a.boyut()):
-                raise ValueError(
-                    "Axis out of bounds for gergen's dimensionality")
+                raise ValueError("Axis out of bounds for gergen's dimensionality")
             result = sum_along_axis(a.listeye(), eksen)
         else:
             raise TypeError("Axis must be an integer or None")
@@ -842,10 +800,8 @@ class Topla(Operation):
         if self.eksen is None:
             # If the sum was across the entire tensor, every element contributes equally.
             grad_input_shape = [1] * len(a.boyut())  # Create a shape of ones
-            expanded_grad = grad_output.boyutlandir(
-                grad_input_shape)  # Expand grad to match input shape
-            grad_input = expanded_grad * gergen.custom_zeros(
-                a.boyut())  # Multiply by a tensor of ones
+            expanded_grad = grad_output.boyutlandir(grad_input_shape)  # Expand grad to match input shape
+            grad_input = expanded_grad * gergen.custom_zeros(a.boyut())  # Multiply by a tensor of ones
         else:
             # If sum was along a particular axis, replicate the gradient along that axis
             repeats = [1] * len(a.boyut())
@@ -873,9 +829,7 @@ class Ortalama(Operation):
             # Compute the average
             if isinstance(total_sum, list):
                 # If total_sum is a list (multi-dimensional case), calculate the average for each sublist
-                return [
-                    average_elements(ts, total_elements) for ts in total_sum
-                ]
+                return [average_elements(ts, total_elements) for ts in total_sum]
             else:
                 # For a single number, just divide
                 return total_sum / total_elements
@@ -890,8 +844,7 @@ class Ortalama(Operation):
             total_elements = a.uzunluk()
         else:
             if eksen < 0 or eksen >= len(a.boyut()):
-                raise ValueError(
-                    "Axis out of bounds for gergen's dimensionality")
+                raise ValueError("Axis out of bounds for gergen's dimensionality")
             total_elements = a.boyut()[eksen]
 
         # Compute the average
@@ -953,8 +906,7 @@ class IcCarpim(Operation):
 
         def vector_dot_product(v1, v2):
             if len(v1) != len(v2):
-                raise ValueError(
-                    "Vectors must have the same length for dot product.")
+                raise ValueError("Vectors must have the same length for dot product.")
             return sum(x * y for x, y in zip(v1, v2))
 
         def matrix_multiply(m1, m2):
@@ -962,13 +914,10 @@ class IcCarpim(Operation):
                 raise ValueError(
                     "The number of columns in the first matrix must match the number of rows in the second matrix."
                 )
-            return [[
-                sum(a * b for a, b in zip(row_a, col_b)) for col_b in zip(*m2)
-            ] for row_a in m1]
+            return [[sum(a * b for a, b in zip(row_a, col_b)) for col_b in zip(*m2)] for row_a in m1]
 
         if len(a.boyut()) > 2 or len(b.boyut()) > 2:
-            raise ValueError(
-                "Operands must both be either 1-D vectors or 2-D matrices.")
+            raise ValueError("Operands must both be either 1-D vectors or 2-D matrices.")
         elif is_vector(a) and is_vector(b):
             # Perform vector dot product
             result = vector_dot_product(a.listeye(), b.listeye())
@@ -976,8 +925,7 @@ class IcCarpim(Operation):
             # Perform matrix multiplication
             result = matrix_multiply(a.listeye(), b.listeye())
         else:
-            raise ValueError(
-                "Operands must both be either 1-D vectors or 2-D matrices.")
+            raise ValueError("Operands must both be either 1-D vectors or 2-D matrices.")
 
         # Return result
         return gergen(result, operation=self)
@@ -992,16 +940,14 @@ class IcCarpim(Operation):
         # Compute gradients with respect to inputs
         if len(a.boyut()) == 1 and len(b.boyut()) == 1:
             # Vector dot product case, outer product of vectors
-            grad_a = grad_output * b.devrik(
-            )  # grad_output needs to be reshaped if it's a scalar
+            grad_a = grad_output * b.devrik()  # grad_output needs to be reshaped if it's a scalar
             grad_b = a.devrik() * grad_output
         elif len(a.boyut()) == 2 and len(b.boyut()) == 2:
             # Matrix multiplication case
             grad_a = grad_output * b.devrik()
             grad_b = a.devrik() * grad_output
         else:
-            raise ValueError(
-                "Operands must both be either 1-D vectors or 2-D matrices.")
+            raise ValueError("Operands must both be either 1-D vectors or 2-D matrices.")
 
         return grad_a, grad_b
 
@@ -1023,10 +969,9 @@ class DisCarpim(Operation):
             raise ValueError("Both operands must be gergen objects.")
 
         # Ensure the veri attributes are lists representing vectors
-        if not all(isinstance(x, (int, float)) for x in a.listeye()) or not all(
-                isinstance(y, (int, float)) for y in b.listeye()):
-            raise ValueError(
-                "Both gergen objects must contain 1-D numerical data.")
+        if not all(isinstance(x, (int, float))
+                   for x in a.listeye()) or not all(isinstance(y, (int, float)) for y in b.listeye()):
+            raise ValueError("Both gergen objects must contain 1-D numerical data.")
 
         self.operands = [a, b]
         # Compute the outer product
@@ -1046,17 +991,13 @@ class DisCarpim(Operation):
         # grad_input.shape = (len(a.veri), len(b.veri))
         # We sum over the columns of grad_input for each element in b
         grad_a = [
-            sum(grad_input.veri[i][j] * b.veri[j]
-                for j in range(len(b.veri)))
-            for i in range(len(a.veri))
+            sum(grad_input.veri[i][j] * b.veri[j] for j in range(len(b.veri))) for i in range(len(a.veri))
         ]
 
         # Gradients for b are the dot product of grad_input with each row of a
         # We sum over the rows of grad_input for each element in a
         grad_b = [
-            sum(grad_input.veri[i][j] * a.veri[i]
-                for i in range(len(a.veri)))
-            for j in range(len(b.veri))
+            sum(grad_input.veri[i][j] * a.veri[i] for i in range(len(a.veri))) for j in range(len(b.veri))
         ]
 
         # Return gradients wrapped in gergen objects
@@ -1152,8 +1093,7 @@ class gergen:
             for subdata in data:
                 inner_results.append(self.str_helper(subdata, shape, depth + 1))
 
-            result = "[" + ("\n" * (shape - depth - 1)).join(
-                r for r in inner_results) + "]"
+            result = "[" + ("\n" * (shape - depth - 1)).join(r for r in inner_results) + "]"
             return result
 
     @property
@@ -1267,8 +1207,7 @@ class gergen:
         if self.uzunluk() == 1:
             return gergen(self.__veri)
         # Check if the gergen object represents a 1D list (vector)
-        if isinstance(self.__veri, list) and all(
-                not isinstance(item, list) for item in self.__veri):
+        if isinstance(self.__veri, list) and all(not isinstance(item, list) for item in self.__veri):
             # Convert each element into a list (column vector)
             return gergen([[item] for item in self.__veri])
         else:
@@ -1276,8 +1215,7 @@ class gergen:
             new_boyut = tuple(reversed(self.__boyut))
             order = list(reversed(range(len(self.__boyut))))
             arr = self.custom_zeros(
-                new_boyut
-            )  # Assuming custom_zeros initializes an array with the given shape
+                new_boyut)  # Assuming custom_zeros initializes an array with the given shape
             paths = [0] * len(self.__boyut)
             while paths[0] < self.__boyut[0]:
                 ref = self.listeye()
@@ -1299,8 +1237,7 @@ class gergen:
 
     def L1(self):
         # Calculates and returns the L1 norm
-        flattened_data = self.duzlestir(
-        ).__veri  # Assuming flatten returns a gergen object
+        flattened_data = self.duzlestir().__veri  # Assuming flatten returns a gergen object
         # Calculate the L1 norm by summing the absolute values of elements in the flattened list
         l1_norm = sum(abs(item) for item in flattened_data)
         return l1_norm
@@ -1378,9 +1315,7 @@ class gergen:
 
         # Check if the new shape is compatible with the number of elements
         if self.prod(yeni_boyut) != len(flat_data):
-            raise ValueError(
-                "New shape must have the same number of elements as the original."
-            )
+            raise ValueError("New shape must have the same number of elements as the original.")
 
         # Use the helper to create the reshaped data and update the object's internal state
         self.__veri = reshape_helper(flat_data, yeni_boyut)
