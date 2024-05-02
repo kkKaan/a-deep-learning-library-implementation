@@ -1029,8 +1029,8 @@ class gergen:
             self.__boyut = self.get_shape(veri, ())  # Assuming rectangular data
             self.D = None
             self.turev = None
-            self.operation = operation
-            self.requires_grad = requires_grad
+            # self.operation = operation
+            # self.requires_grad = requires_grad
 
     def __iter__(self):
         # The __iter__ method returns the iterator object itself.

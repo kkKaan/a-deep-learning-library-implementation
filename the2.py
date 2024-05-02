@@ -19,8 +19,8 @@ class ReLU(Operation):
             gergen: Output of the ReLU function.
         """
         self.x = x
-        result = apply_elementwise(x, lambda val: max(0, val))
-        return result
+        result_list = apply_elementwise(x, lambda val: max(0, val))
+        return gergen(result_list, operation=self)
 
     def geri(self, grad_input):
         """
@@ -34,7 +34,8 @@ class ReLU(Operation):
             gergen: Gradient of the ReLU function.
         """
         grad = apply_elementwise(self.x, lambda val: 1 if val > 0 else 0)
-        return grad_input * grad
+        result_gergen = gergen(grad, operation=self)
+        return grad_input * result_gergen
 
 
 class Softmax(Operation):
@@ -51,12 +52,12 @@ class Softmax(Operation):
         """
         self.x = x
         # Subtract the max value for numerical stability
-        max_val = max(x.listeye())
+        max_val = max(x.duzlestir().veri)
+        # The list of exponentiated values
         exps = apply_elementwise(x, lambda val: math.exp(val - max_val))
-
+        print(exps)
         # Sum of all exponentiated values
-        sum_exps = sum(exps.listeye())
-
+        sum_exps = sum(exps)
         # Apply normalization
         result = apply_elementwise(exps, lambda val: val / sum_exps)
         return result

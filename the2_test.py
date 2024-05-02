@@ -110,7 +110,7 @@ def main():
 
     #### test softmax
     print("softmax")
-    g1 = gergen([1, 2, 3])
+    g1 = gergen([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
     softmax = Softmax()
     res = softmax.ileri(g1)
     print(res)
