@@ -40,7 +40,7 @@ class ReLU(Operation):
 
 class Softmax(Operation):
 
-    def ileri(self, x):
+    def ileri(self, x, dim=None):
         """
         Apply the Softmax activation function to the input.
 
@@ -51,16 +51,20 @@ class Softmax(Operation):
             gergen: Output of the Softmax function.
         """
         self.x = x
-        # Subtract the max value for numerical stability
-        max_val = max(x.duzlestir().veri)
-        # The list of exponentiated values
-        exps = apply_elementwise(x, lambda val: math.exp(val - max_val))
-        print(exps)
-        # Sum of all exponentiated values
-        sum_exps = sum(exps)
-        # Apply normalization
-        result = apply_elementwise(exps, lambda val: val / sum_exps)
-        return result
+        self.dim = dim
+
+        # Compute the softmax of the input x
+        result = []
+        data = x.veri if dim is 1 else x.devrik().veri  # Transpose if dim is 0
+
+        for row in data:
+            exps = [math.exp(val) for val in row]
+            sum_exps = sum(exps)
+            softmax_vals = [exp_val / sum_exps for exp_val in exps]
+            result.append(softmax_vals)
+
+        result = result if dim is 1 else gergen(result).devrik().veri  # Transpose back if dim is 0
+        return gergen(result, operation=self)
 
     def geri(self, grad_input):
         """
@@ -72,18 +76,23 @@ class Softmax(Operation):
         Returns:
             gergen: Gradient of the Softmax function.
         """
-        softmax_output = self.ileri(self.x)
-        # Compute gradient using the softmax gradient formula
-        # s_i * (delta_ij - s_j)
+        softmax_output = self.ileri(self.x, self.dim).veri
         result = []
-        for i in range(len(softmax_output.veri)):
-            grad = 0
-            for j in range(len(softmax_output.veri)):
-                kronecker_delta = 1 if i == j else 0
-                grad += softmax_output.veri[j] * (kronecker_delta -
-                                                  softmax_output.veri[i]) * grad_input.veri[j]
-            result.append(grad)
-        return gergen(result)
+
+        for i, (outputs, grads) in enumerate(zip(softmax_output, grad_input.veri)):
+            # Calculate the gradient component for each output
+            gradient_components = []
+            for j, (s_j, g_j) in enumerate(zip(outputs, grads)):
+                s_i = outputs[i]
+                gradient_component = s_i * (int(i == j) - s_j) * g_j
+                gradient_components.append(gradient_component)
+            result.append(gradient_components)
+
+        # Return as transposed if dim is not 1 to match the input shape
+        if self.dim != 1:
+            result = [list(x) for x in zip(*result)]
+
+        return gergen(result, operation=self)
 
 
 class Katman:

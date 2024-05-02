@@ -109,11 +109,49 @@ def main():
     # print("relu")
 
     #### test softmax
-    print("softmax")
+    print("-------SOFTMAX-------")
+
+    # print("---ileri---")
+
+    # # gergen softmax
+    # print("gergen softmax")
+    # g1 = gergen([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+    # softmax = Softmax()
+    # res = softmax.ileri(g1, dim=1)
+    # print("result of gergen softmax: \n", res)
+
+    # print("#############################################")
+
+    # # torch softmax
+    # print("torch softmax")
+    # t1 = torch.tensor([[1, 2, 3], [4, 5, 6], [7, 8, 9]], dtype=torch.float32, requires_grad=True)
+    # t_softmax = torch.nn.Softmax(dim=1)
+    # t_res = t_softmax(t1)
+    # print("result of torch softmax: \n", t_res)
+
+    print("---geri---")
+
+    # gergen softmax
+    print("gergen softmax")
+    ones3_3 = [[1, 1, 1], [1, 1, 1], [1, 1, 1]]
     g1 = gergen([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
     softmax = Softmax()
-    res = softmax.ileri(g1)
-    print(res)
+    res = softmax.ileri(g1, dim=1)
+    print("result of gergen softmax: \n", res)
+    back = softmax.geri(gergen(ones3_3))
+    print("gradient of the tensor: \n", back)
+
+    print("#############################################")
+
+    # torch softmax
+    print("torch softmax")
+    t1 = torch.tensor([[1, 2, 3], [4, 5, 6], [7, 8, 9]], dtype=torch.float32, requires_grad=True)
+    t_softmax = torch.nn.Softmax(dim=1)
+    t_res = t_softmax(t1)
+    print("result of torch softmax: \n", t_res)
+    grad_tensor = torch.ones_like(t_res)
+    t_res.sum().backward()
+    print("gradient of the tensor: \n", t1.grad)
 
 
 if __name__ == "__main__":
