@@ -657,7 +657,7 @@ def apply_elementwise(g, func):
         func (function): The function to apply to the data.
     
     Returns:
-        gergen: A new gergen object with the function applied element-wise.
+        list: A new veri for a gergen object with the function applied element-wise.
     """
 
     def recursive_apply(data):

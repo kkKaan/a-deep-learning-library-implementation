@@ -19,8 +19,8 @@ class ReLU(Operation):
             gergen: Output of the ReLU function.
         """
         self.x = x
-        relu_output = gergen([max(0, item) for item in x.veri], operation=self)
-        return relu_output
+        result = apply_elementwise(x, lambda val: max(0, val))
+        return result
 
     def geri(self, grad_input):
         """
@@ -33,24 +33,56 @@ class ReLU(Operation):
         Returns:
             gergen: Gradient of the ReLU function.
         """
-        grad_output = gergen(
-            [grad_input.veri[i] * (1 if self.x.veri[i] > 0 else 0) for i in range(len(self.x.veri))])
-        return grad_output
+        grad = apply_elementwise(self.x, lambda val: 1 if val > 0 else 0)
+        return grad_input * grad
 
 
 class Softmax(Operation):
 
     def ileri(self, x):
         """
-        TODO: Softmax activation function
+        Apply the Softmax activation function to the input.
+
+        Parameters:
+            x (gergen): Input to the Softmax function.
+
+        Returns:
+            gergen: Output of the Softmax function.
         """
-        pass
+        self.x = x
+        # Subtract the max value for numerical stability
+        max_val = max(x.listeye())
+        exps = apply_elementwise(x, lambda val: math.exp(val - max_val))
+
+        # Sum of all exponentiated values
+        sum_exps = sum(exps.listeye())
+
+        # Apply normalization
+        result = apply_elementwise(exps, lambda val: val / sum_exps)
+        return result
 
     def geri(self, grad_input):
         """
-        TODO: Compute the gradient of the Softmax function
+        Compute the gradient of the Softmax function.
+
+        Parameters:
+            grad_input (gergen): Gradient of the output of the Softmax function.
+
+        Returns:
+            gergen: Gradient of the Softmax function.
         """
-        pass
+        softmax_output = self.ileri(self.x)
+        # Compute gradient using the softmax gradient formula
+        # s_i * (delta_ij - s_j)
+        result = []
+        for i in range(len(softmax_output.veri)):
+            grad = 0
+            for j in range(len(softmax_output.veri)):
+                kronecker_delta = 1 if i == j else 0
+                grad += softmax_output.veri[j] * (kronecker_delta -
+                                                  softmax_output.veri[i]) * grad_input.veri[j]
+            result.append(grad)
+        return gergen(result)
 
 
 class Katman:

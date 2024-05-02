@@ -105,6 +105,16 @@ def main():
     # print("gradient of the first tensor: \n", back[0])
     # print("gradient of the second tensor: \n", back[1])
 
+    #### test relu
+    # print("relu")
+
+    #### test softmax
+    print("softmax")
+    g1 = gergen([1, 2, 3])
+    softmax = Softmax()
+    res = softmax.ileri(g1)
+    print(res)
+
 
 if __name__ == "__main__":
     cekirdek(2)
