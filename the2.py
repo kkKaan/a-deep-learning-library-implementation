@@ -40,7 +40,7 @@ class ReLU(Operation):
 
 class Softmax(Operation):
 
-    def ileri(self, x, dim=None):
+    def ileri(self, x, dim=1):
         """
         Apply the Softmax activation function to the input.
 
@@ -71,7 +71,7 @@ class Softmax(Operation):
         Compute the gradient of the Softmax function.
 
         Parameters:
-            grad_input (gergen): Gradient of the output of the Softmax function.
+            grad_input (gergen): Gradient of the output of the Softmax function. ?????
 
         Returns:
             gergen: Gradient of the Softmax function.
@@ -95,6 +95,23 @@ class Softmax(Operation):
         return gergen(result, operation=self)
 
 
+def add_vec_to_each_row(ger, vec):
+    """
+    Add a vector to each row of a matrix.
+
+    Parameters:
+        gergen (gergen): Matrix to which the vector will be added.
+        vec (list): Vector to be added to each row.
+
+    Returns:
+        gergen: Resulting matrix.
+    """
+    result = []
+    for row in ger.veri:
+        result.append([x + y for x, y in zip(row, vec)])
+    return gergen(result)
+
+
 class Katman:
 
     def __init__(self, input_size, output_size, activation=None):
@@ -108,33 +125,40 @@ class Katman:
         # Initialize weights and biases
         # Using He initialization if activation is 'relu', otherwise Xavier
         stddev = math.sqrt(2. / input_size) if activation == 'relu' else math.sqrt(1. / input_size)
-        self.weights = gergen(
-            [[random.gauss(0, stddev) for _ in range(output_size)] for _ in range(input_size)],
-            requires_grad=True)
-        self.biases = gergen([random.gauss(0, stddev) for _ in range(output_size)], requires_grad=True)
+        self.weights = rastgele_gercek((output_size, input_size)) * stddev
+        self.biases = rastgele_gercek((output_size, 1))
+        print("weights: \n", self.weights)
+        print("biases: \n", self.biases)
 
     def ileri(self, x):
         """
         Performs the forward pass of the layer using matrix multiplication followed by adding biases.
+
+        Parameters:
+            x (gergen): Input to the layer.
+        
+        Returns:
+            gergen: Output of the layer.
         """
         # Create an instance of IcCarpim operation
         matrix_multiplication = IcCarpim()
 
         # Compute the matrix multiplication of input x and weights
-        z = matrix_multiplication.ileri(x, self.weights)
+        z = matrix_multiplication.ileri(self.weights, x)
 
-        # Add biases (ensure bias dimensions are correct for broadcasting)
-        if len(z.veri) == len(self.biases.veri):
-            z = z + self.biases
-        else:
-            raise ValueError(
-                "Dimension mismatch: output of matrix multiplication and biases are not aligned.")
+        # print("after matrix mult: ", z)
+
+        z = z + self.biases
+
+        # print("after adding biases: ", z)
 
         # Apply activation function if specified
         if self.activation == 'relu':
-            z = z.relu()
+            relu_op = ReLU()
+            z = relu_op.ileri(z)
         elif self.activation == 'softmax':
-            z = z.softmax()
+            softmax_op = Softmax()
+            z = softmax_op.ileri(z, dim=1)
 
         return z
 
@@ -147,26 +171,53 @@ class MLP:
 
     def __init__(self, input_size, hidden_size, output_size):
         """
-        TODO: Initialize the MLP with input, hidden, and output layers
+        Initialize the MLP with input, hidden, and output layers
+
+        Parameters:
+            input_size (int): Number of input features
+            hidden_size (int): Number of hidden units
+            output_size (int): Number of output units
+        
+        Returns:
+            None
         """
-        self.hidden_layer = None
-        self.output_layer = None
+        self.hidden_layer = Katman(input_size, hidden_size, activation='relu')
+        self.output_layer = Katman(hidden_size, output_size, activation='softmax')
 
     def ileri(self, x):
         """
-        TODO: Implement the forward pass
+        Forward pass of the MLP
+
+        Parameters:
+            x (gergen): Input to the MLP
+        
+        Returns:
+            gergen: Output of the MLP
         """
-        pass
+        hidden_output = self.hidden_layer.ileri(x)
+        output = self.output_layer.ileri(hidden_output)
+        return output
 
 
 def cross_entropy(y_pred, y_true):
     """
-    TODO: Implement the cross-entropy loss function
-    y_pred : Predicted probabilities for each class in each sample
-    y_true : True labels.
+    The cross-entropy loss function for multi-class classification.
     Remember, in a multi-class classification context, y_true is typically represented in a one-hot encoded format.
+    
+    Parameters:
+        y_pred : Predicted probabilities for each class in each sample
+        y_true : True labels.
+
+    Returns:
+        float : The cross-entropy loss
     """
-    pass
+    # Compute the cross-entropy loss
+    loss = 0
+    for i in range(len(y_pred)):
+        for j in range(len(y_pred[i])):
+            loss += y_true[i][j] * math.log(y_pred[i][j])
+
+    return -loss
 
 
 def egit(mlp, inputs, targets, epochs, learning_rate):

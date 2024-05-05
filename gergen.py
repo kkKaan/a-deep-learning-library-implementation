@@ -853,7 +853,7 @@ class Ortalama(Operation):
 
     def geri(self, grad_output):
         """
-        Computes the backward pass of the Ortalama operation.
+        Computes the backward pass of the Ortalama operation. ?????
         """
         a = self.operands[0]
 
@@ -933,21 +933,28 @@ class IcCarpim(Operation):
     def geri(self, grad_output):
         """
         Computes the backward pass of the IcCarpim operation.
+
+        Parameters:
+            grad_output: The gradient of the loss w.r.t the output of this operation.
+        
+        Returns:
+            Tuple: Gradients w.r.t each operand.
         """
         a = self.operands[0]
         b = self.operands[1]
 
+        # Ensure the gradient output is a gergen object
+        if not isinstance(grad_output, gergen):
+            grad_output = gergen(grad_output)
+
         # Compute gradients with respect to inputs
-        if len(a.boyut()) == 1 and len(b.boyut()) == 1:
-            # Vector dot product case, outer product of vectors
-            grad_a = grad_output * b.devrik()  # grad_output needs to be reshaped if it's a scalar
-            grad_b = a.devrik() * grad_output
-        elif len(a.boyut()) == 2 and len(b.boyut()) == 2:
+        if len(a.boyut()) == 2 and len(b.boyut()) == 2:
             # Matrix multiplication case
-            grad_a = grad_output * b.devrik()
-            grad_b = a.devrik() * grad_output
+            grad_a = grad_output.ic_carpim(b.devrik())  # grad_output (m x p) * b^T (p x n) => (m x n)
+            grad_b = a.devrik().ic_carpim(grad_output)  # a^T (n x m) * grad_output (m x p) => (n x p)
         else:
-            raise ValueError("Operands must both be either 1-D vectors or 2-D matrices.")
+            raise ValueError(
+                "Operands and gradient outputs must both be 2-D matrices for matrix multiplication.")
 
         return grad_a, grad_b
 
@@ -1029,8 +1036,8 @@ class gergen:
             self.__boyut = self.get_shape(veri, ())  # Assuming rectangular data
             self.D = None
             self.turev = None
-            # self.operation = operation
-            # self.requires_grad = requires_grad
+            self.operation = operation
+            self.requires_grad = requires_grad
 
     def __iter__(self):
         # The __iter__ method returns the iterator object itself.
@@ -1125,10 +1132,10 @@ class gergen:
         Creates a multi-dimensional array of zeros with the specified shape.
 
         Parameters:
-        shape (tuple): A tuple representing the dimensions of the array.
+            shape (tuple): A tuple representing the dimensions of the array.
 
         Returns:
-        A nested list (multi-dimensional array) filled with zeros.
+            A nested list (multi-dimensional array) filled with zeros.
         """
         if not shape:  # If shape is empty or reaches the end of recursion
             return 0
