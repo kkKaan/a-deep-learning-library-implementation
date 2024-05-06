@@ -55,7 +55,7 @@ class Softmax(Operation):
 
         # Compute the softmax of the input x
         result = []
-        data = x.veri if dim is 1 else x.devrik().veri  # Transpose if dim is 0
+        data = x.veri if dim == 1 else x.devrik().veri  # Transpose if dim is 0
 
         for row in data:
             exps = [math.exp(val) for val in row]
@@ -63,7 +63,7 @@ class Softmax(Operation):
             softmax_vals = [exp_val / sum_exps for exp_val in exps]
             result.append(softmax_vals)
 
-        result = result if dim is 1 else gergen(result).devrik().veri  # Transpose back if dim is 0
+        result = result if dim == 1 else gergen(result).devrik().veri  # Transpose back if dim is 0
         return gergen(result, operation=self, requires_grad=True)
 
     def geri(self, grad_input):
@@ -76,40 +76,31 @@ class Softmax(Operation):
         Returns:
             gergen: Gradient of the Softmax function.
         """
-        softmax_output = self.ileri(self.x, self.dim).veri
-        result = []
 
-        for i, (outputs, grads) in enumerate(zip(softmax_output, grad_input.veri)):
-            # Calculate the gradient component for each output
-            gradient_components = []
-            for j, (s_j, g_j) in enumerate(zip(outputs, grads)):
-                s_i = outputs[i]
-                gradient_component = s_i * (int(i == j) - s_j) * g_j
-                gradient_components.append(gradient_component)
-            result.append(gradient_components)
+        ### OLD IMPLEMENTATION ###
+        # softmax_output = self.ileri(self.x, self.dim).veri
+        # result = []
 
-        # Return as transposed if dim is not 1 to match the input shape
-        if self.dim != 1:
-            result = [list(x) for x in zip(*result)]
+        # if isinstance(grad_input, (int, float)):
+        #     grad_input = gergen(grad_input)
 
-        return gergen(result, operation=self)
+        # # print("grad_input: ", grad_input)
+        # # print("softmax_output: ", softmax_output)
 
+        # for i, (outputs, grads) in enumerate(zip(softmax_output, grad_input.veri)):
+        #     # Calculate the gradient component for each output
+        #     gradient_components = []
+        #     for j, (s_j, g_j) in enumerate(zip(outputs, grads)):
+        #         s_i = outputs[i]
+        #         gradient_component = s_i * (int(i == j) - s_j) * g_j
+        #         gradient_components.append(gradient_component)
+        #     result.append(gradient_components)
 
-def add_vec_to_each_row(ger, vec):
-    """
-    Add a vector to each row of a matrix.
+        # # Return as transposed if dim is not 1 to match the input shape
+        # if self.dim != 1:
+        #     result = [list(x) for x in zip(*result)]
 
-    Parameters:
-        gergen (gergen): Matrix to which the vector will be added.
-        vec (list): Vector to be added to each row.
-
-    Returns:
-        gergen: Resulting matrix.
-    """
-    result = []
-    for row in ger.veri:
-        result.append([x + y for x, y in zip(row, vec)])
-    return gergen(result)
+        # return gergen(result, operation=self)
 
 
 class Katman:
@@ -127,8 +118,8 @@ class Katman:
         stddev = math.sqrt(2. / input_size) if activation == 'relu' else math.sqrt(1. / input_size)
         self.weights = rastgele_gercek((output_size, input_size)) * stddev
         self.biases = rastgele_gercek((output_size, 1))
-        print("weights: \n", self.weights)
-        print("biases: \n", self.biases)
+        # print("weights: \n", self.weights)
+        # print("biases: \n", self.biases)
 
     def ileri(self, x):
         """
@@ -205,21 +196,18 @@ def cross_entropy(y_pred, y_true):
     Remember, in a multi-class classification context, y_true is typically represented in a one-hot encoded format.
     
     Parameters:
-        y_pred : Predicted probabilities for each class in each sample
-        y_true : True labels.
+        y_pred (gergen): Predicted probabilities for each class in each sample
+        y_true (gergen): True labels.
 
     Returns:
         float : The cross-entropy loss
     """
-    n_samples = len(y_pred)
-    loss = 0.0
     epsilon = 1e-12  # Small value to avoid log(0)
-    
-    for i in range(n_samples):
-        for j in range(len(y_pred[i])):
-            loss += y_true[i][j] * math.log(y_pred[i][j] + epsilon)
-    
-    return -loss / n_samples
+    n = y_pred.boyut()[0]
+
+    loss = (y_true * (y_pred + epsilon).ln()).topla()
+    loss = loss / -n
+    return loss
 
 
 def egit(mlp, inputs, targets, epochs, learning_rate):
@@ -241,17 +229,23 @@ def egit(mlp, inputs, targets, epochs, learning_rate):
 
     for epoch in range(epochs):
         total_loss = 0
+        # print("input size: ", inputs.boyut())
+        # print("target size: ", targets.boyut())
 
-        for x, y in zip(inputs, targets):
+        for i in range(inputs.boyut()[0]):
             # Convert the input and target to `gergen` objects
-            x_gergen = gergen(x)
-            y_gergen = gergen(y)
+            x_gergen = inputs[i]
+            # print("type of x_gergen: ", type(x_gergen))
+            # print("x_gergen shape: ", x_gergen.boyut())
+            x_gergen.boyutlandir((x_gergen.boyut()[0], 1))
+            y_gergen = targets[i]
+            y_gergen.boyutlandir((y_gergen.boyut()[0], 1))
 
             # Forward pass: predict with the MLP
             predictions = mlp.ileri(x_gergen)
 
             # Compute the loss via cross-entropy
-            loss = cross_entropy(predictions.veri, y_gergen.veri)
+            loss = cross_entropy(predictions, y_gergen)
 
             # Backward pass: calculate gradients using `turev_al`
             predictions.turev_al(1)
@@ -261,8 +255,7 @@ def egit(mlp, inputs, targets, epochs, learning_rate):
                 for param in [layer.weights, layer.biases]:
                     if param.requires_grad:
                         grad_adjusted = [
-                            value - learning_rate * grad
-                            for value, grad in zip(param.veri, param.turev.veri)
+                            value - learning_rate * grad for value, grad in zip(param.veri, param.turev.veri)
                         ]
                         param.turev = gergen(grad_adjusted)
 
@@ -275,4 +268,3 @@ def egit(mlp, inputs, targets, epochs, learning_rate):
         print(f"Epoch {epoch + 1}/{epochs}: Loss = {average_loss}")
 
     return loss_curve
-

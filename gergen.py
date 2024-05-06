@@ -417,6 +417,7 @@ class Mul(Operation):
         else:
             raise ValueError("Mul operation requires at least one gergen operand.")
 
+        result.requires_grad = True
         return result
 
     def multiply_scalar(self, a, scalar):
@@ -1023,15 +1024,15 @@ class gergen:
     __boyut = None  # Dimensions of the gergen (Shape)
     requires_grad = True  # Flag to determine if the gradient should be computed
 
-    def __init__(self, veri=None, operation=None, requires_grad=None):
+    def __init__(self, veri=None, operation=None, requires_grad=True):
         # The constructor for the 'gergen' class.
         if veri is None:
             self.__veri = []
             self.__boyut = (0,)
             self.D = None
             self.turev = None
-            self.operation = None
-            self.requires_grad = None
+            self.operation = operation
+            self.requires_grad = requires_grad
         else:
             self.__veri = veri
             self.__boyut = self.get_shape(veri, ())  # Assuming rectangular data
@@ -1043,11 +1044,19 @@ class gergen:
     def __iter__(self):
         # The __iter__ method returns the iterator object itself.
         # You can reset the iterator here if you want to allow multiple passes over the data.
-        pass
+
+        # Reset the iterator
+        self.__current = 0
+        return self
 
     def __next__(self):
         # The __next__ method should return the next value from the iterator.
-        pass
+
+        # Check if we've reached the end of the list
+        if self.__current < len(self.__veri):
+            result = self.__veri[self.__current]
+            self.__current += 1
+            return result
 
     def __getitem__(self, key):
         """
@@ -1406,6 +1415,7 @@ class gergen:
             self.turev = grad_output
         else:
             # Get gradients of the input(s) by calling geri()
+            # print("grad_output: ", grad_output)
             gradients = self.operation.geri(grad_output)
 
             # If there are multiple inputs (a tuple of gradients)
@@ -1418,4 +1428,3 @@ class gergen:
                 operand = self.operation.operands[0]
                 if operand.requires_grad:
                     operand.turev_al(gradients)
-

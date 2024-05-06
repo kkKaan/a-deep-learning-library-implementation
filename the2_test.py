@@ -2,10 +2,27 @@ import pandas as pd
 import io
 import numpy as np
 import torch
-from sklearn.preprocessing import LabelBinarizer
+from sklearn.preprocessing import LabelBinarizer, OneHotEncoder
 
 from gergen import *
 from the2 import *
+
+
+def train(mlp, inputs, targets, epochs, learning_rate):
+    """
+    Train the provided MLP model using the input data and targets.
+
+    Parameters:
+        mlp (MLP): The MLP model with an `ileri` method for forward propagation.
+        inputs (list or generator): Input data to train on (each sample should be formatted as a gergen object).
+        targets (list or generator): Target data to train on (each sample should be formatted as a gergen object).
+        epochs (int): Number of epochs to train the model.
+        learning_rate (float): Learning rate for the optimizer.
+    
+    Returns:
+        None
+    """
+    pass
 
 
 def test(mlp, inputs, targets):
@@ -23,29 +40,45 @@ def data_preprocessing(data_file):
     TODO:    DATA PREPROCESSING
     """
     # Load the data
+    data = pd.read_csv(data_file)
 
     # Get the first column as labels (You can use one-hot encoding if needed (You can use sklearn or pandas for this))
+    labels = data.iloc[:, 0]
+    # print(labels)
 
     # Get the remaining columns as data
+    data = data.iloc[:, 1:]
+    # print(data)
+    data = data.divide(255)  # Normalize the data
+
+    # One-hot encoding
+    encoder = OneHotEncoder()
+    labels = encoder.fit_transform(labels.values.reshape(-1, 1)).toarray()
+
+    # Convert the data and labels to gergen objects
+    # print(type(data.values.tolist()))
+    # print(labels.tolist())
+    data_gergen = gergen(data.values.tolist())
+    labels = gergen(labels.tolist())
 
     # Return the data and labels
-    return None, None
+    return data_gergen, labels
 
 
 def main():
-    # Some basic tests for gergen class
+    # # Some basic tests for gergen class
     # g1 = rastgele_dogal((2,2))
     # g2 = gergen([1,2,3])
     # print(g1.us(2))
     # print(g2.us(2))
 
-    g1 = rastgele_dogal((2, 2))
+    # g1 = rastgele_dogal((2, 2))
 
-    # generate 2x2 numpy array and take backward pass
-    ones = [[1, 1], [1, 1], [1, 1]]
-    array = np.array([[1, 2], [3, 4], [5, 6]])
-    gArray = gergen([[1, 2], [3, 4], [5, 6]])
-    tArray = torch.tensor([[1, 2], [3, 4], [5, 6]], dtype=torch.float32, requires_grad=True)
+    # # generate 2x2 numpy array and take backward pass
+    # ones = [[1, 1], [1, 1], [1, 1]]
+    # array = np.array([[1, 2], [3, 4], [5, 6]])
+    # gArray = gergen([[1, 2], [3, 4], [5, 6]])
+    # tArray = torch.tensor([[1, 2], [3, 4], [5, 6]], dtype=torch.float32, requires_grad=True)
     # a = np.gradient(array.mean())
     # print(a)
 
@@ -223,7 +256,7 @@ def main():
 
     # print("---geri---")
 
-    # # gergen softmax
+    # # gergen softmax
     # print("gergen softmax")
     # g1 = gergen([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
     # ones3_3 = (gergen(g1.custom_zeros(g1.boyut())) + 1).veri
@@ -258,42 +291,61 @@ def main():
     # print("result of gergen katman: \n", res)
 
     #### test MLP class
-    print("-------MLP-------")
+    # print("-------MLP-------")
 
-    print("---ileri---")
+    # print("---ileri---")
 
-    # gergen mlp
-    print("gergen mlp")
-    g1 = gergen([[1], [1], [1]])
-    mlp = MLP(3, 2, 2)
-    res = mlp.ileri(g1)
-    print("result of gergen mlp: \n", res)
+    # # gergen mlp
+    # print("gergen mlp")
+    # g1 = gergen([[1], [1], [1]])
+    # mlp = MLP(3, 2, 2)
+    # res = mlp.ileri(g1)
+    # print("result of gergen mlp: \n", res)
 
     #### test cross entropy loss
-    print("-------CROSS ENTROPY LOSS-------")
+    # print("-------CROSS ENTROPY LOSS-------")
 
-    print("---ileri---")
+    # # gergen cross entropy loss
+    # print("gergen cross entropy loss")
+    # g1 = gergen([[1, 4], [3, 6], [5, 8]])
+    # g2 = gergen([[1, 0], [0, 1], [1, 0]])
+    # loss = cross_entropy(g1, g2)
+    # print("result of gergen cross entropy loss: \n", loss)
 
-    # gergen cross entropy loss
-    print("gergen cross entropy loss")
-    g1 = gergen([[1, 2], [3, 4], [5, 6]])
-    g2 = gergen([[1, 0], [0, 1], [1, 0]])
-    loss = cross_entropy(g1, g2)
-    print("result of gergen cross entropy loss: \n", loss)
+    # print("#############################################")
 
-    print("#############################################")
+    # # torch cross entropy loss
+    # print("torch cross entropy loss")
+    # t1 = torch.tensor([[1, 4], [3, 6], [5, 8]], dtype=torch.float32, requires_grad=True)
+    # t2 = torch.tensor([[1, 0], [0, 1], [1, 0]], dtype=torch.float32)
+    # t_loss = torch.nn.CrossEntropyLoss()
+    # t_res = t_loss(t1, torch.argmax(t2, dim=1))
+    # print("result of torch cross entropy loss: \n", t_res)
 
-    # torch cross entropy loss
-    print("torch cross entropy loss")
-    t1 = torch.tensor([[1, 2], [3, 4], [5, 6]], dtype=torch.float32, requires_grad=True)
-    t2 = torch.tensor([[1, 0], [0, 1], [1, 0]], dtype=torch.float32)
-    t_loss = torch.nn.CrossEntropyLoss()
-    t_res = t_loss(t1, torch.argmax(t2, dim=1))
-    print("result of torch cross entropy loss: \n", t_res)
+    pass
 
 
 if __name__ == "__main__":
     cekirdek(2)
     # data_file = "./path_to_data"
     # main(data_file)
-    main()
+    # main()
+
+    # Load the data
+    train_data_path = "train_data.csv"
+    data, labels = data_preprocessing(train_data_path)
+    # print("type data: ", type(data))
+    # print("type labels: ", type(labels))
+
+    # Initialize the MLP with input, hidden, and output layers
+    input_size = 28 * 28
+    hidden_size = 10
+    output_size = 10
+    mlp = MLP(input_size=input_size, hidden_size=hidden_size, output_size=output_size)
+
+    # Train the MLP using your preferred training loop
+    epochs = 5
+    learning_rate = 0.01
+
+    # Egit
+    egit(mlp, data, labels, epochs, learning_rate)
