@@ -246,16 +246,50 @@ def main():
     # print("gradient of the tensor: \n", t1.grad)
 
     #### test Katman class
-    print("-------KATMAN-------")
+    # print("-------KATMAN-------")
+
+    # print("---ileri---")
+
+    # # gergen katman
+    # print("gergen katman")
+    # g1 = gergen([[1], [1], [1]])
+    # katman = Katman(3, 2, "relu")
+    # res = katman.ileri(g1)
+    # print("result of gergen katman: \n", res)
+
+    #### test MLP class
+    print("-------MLP-------")
 
     print("---ileri---")
 
-    # gergen katman
-    print("gergen katman")
+    # gergen mlp
+    print("gergen mlp")
     g1 = gergen([[1], [1], [1]])
-    katman = Katman(3, 2, "relu")
-    res = katman.ileri(g1)
-    print("result of gergen katman: \n", res)
+    mlp = MLP(3, 2, 2)
+    res = mlp.ileri(g1)
+    print("result of gergen mlp: \n", res)
+
+    #### test cross entropy loss
+    print("-------CROSS ENTROPY LOSS-------")
+
+    print("---ileri---")
+
+    # gergen cross entropy loss
+    print("gergen cross entropy loss")
+    g1 = gergen([[1, 2], [3, 4], [5, 6]])
+    g2 = gergen([[1, 0], [0, 1], [1, 0]])
+    loss = cross_entropy(g1, g2)
+    print("result of gergen cross entropy loss: \n", loss)
+
+    print("#############################################")
+
+    # torch cross entropy loss
+    print("torch cross entropy loss")
+    t1 = torch.tensor([[1, 2], [3, 4], [5, 6]], dtype=torch.float32, requires_grad=True)
+    t2 = torch.tensor([[1, 0], [0, 1], [1, 0]], dtype=torch.float32)
+    t_loss = torch.nn.CrossEntropyLoss()
+    t_res = t_loss(t1, torch.argmax(t2, dim=1))
+    print("result of torch cross entropy loss: \n", t_res)
 
 
 if __name__ == "__main__":

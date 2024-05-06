@@ -159,6 +159,7 @@ class Add(Operation):
         else:
             raise ValueError("Add operation requires at least one gergen operand.")
 
+        result.requires_grad = True
         return result
 
     def add_scalar(self, a, scalar):
@@ -928,7 +929,7 @@ class IcCarpim(Operation):
             raise ValueError("Operands must both be either 1-D vectors or 2-D matrices.")
 
         # Return result
-        return gergen(result, operation=self)
+        return gergen(result, operation=self, requires_grad=True)
 
     def geri(self, grad_output):
         """
@@ -1394,28 +1395,27 @@ class gergen:
             grad_output: The gradient of the loss w.r.t the output of the operation.
 
         Returns:
-            gergen: The gradient of the loss w.r.t the input of the operation.
+            None: Gradients are propagated recursively.
         """
-        # if self.operation is None:
-        #     raise ValueError("Cannot compute gradients for the initial data.")
-
-        if self.requires_grad is not True:
+        # If the current gergen doesn't require gradient calculation
+        if not self.requires_grad:
             return
 
+        # If no operation produced this gergen, it's a leaf node
         if self.operation is None:
-            # No operation to propagate back through
             self.turev = grad_output
         else:
-            # Call the geri method of the operation that created this gergen
+            # Get gradients of the input(s) by calling geri()
             gradients = self.operation.geri(grad_output)
 
-            # Typically, gradients would be a tuple if the operation has multiple inputs
+            # If there are multiple inputs (a tuple of gradients)
             if isinstance(gradients, tuple):
-                # We need to update the gradient attribute of each input gergen
                 for inp, grad in zip(self.operation.operands, gradients):
                     if inp.requires_grad:
-                        # Recursive call to propagate the gradient further
                         inp.turev_al(grad)
             else:
-                # Single gradient returned, propagate to the single input
-                self.operation.operands[0].turev_al(gradients)
+                # Single input operation
+                operand = self.operation.operands[0]
+                if operand.requires_grad:
+                    operand.turev_al(gradients)
+

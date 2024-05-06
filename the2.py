@@ -20,7 +20,7 @@ class ReLU(Operation):
         """
         self.x = x
         result_list = apply_elementwise(x, lambda val: max(0, val))
-        return gergen(result_list, operation=self)
+        return gergen(result_list, operation=self, requires_grad=True)
 
     def geri(self, grad_input):
         """
@@ -64,7 +64,7 @@ class Softmax(Operation):
             result.append(softmax_vals)
 
         result = result if dim is 1 else gergen(result).devrik().veri  # Transpose back if dim is 0
-        return gergen(result, operation=self)
+        return gergen(result, operation=self, requires_grad=True)
 
     def geri(self, grad_input):
         """
@@ -211,38 +211,68 @@ def cross_entropy(y_pred, y_true):
     Returns:
         float : The cross-entropy loss
     """
-    # Compute the cross-entropy loss
-    loss = 0
-    for i in range(len(y_pred)):
+    n_samples = len(y_pred)
+    loss = 0.0
+    epsilon = 1e-12  # Small value to avoid log(0)
+    
+    for i in range(n_samples):
         for j in range(len(y_pred[i])):
-            loss += y_true[i][j] * math.log(y_pred[i][j])
-
-    return -loss
+            loss += y_true[i][j] * math.log(y_pred[i][j] + epsilon)
+    
+    return -loss / n_samples
 
 
 def egit(mlp, inputs, targets, epochs, learning_rate):
     """
-    TODO: Implement the training loop
+    Trains the provided MLP model using the input data and targets.
+
+    Parameters:
+        mlp (MLP): The MLP model with an `ileri` method for forward propagation.
+        inputs (list or generator): Input data to train on (each sample should be formatted as a gergen object).
+        targets (list or generator): Expected outputs (each target should be formatted as a gergen object).
+        epochs (int): Number of epochs to run.
+        learning_rate (float): Step size for gradient descent.
+
+    Returns:
+        list: The loss values after each epoch to visualize the learning progress.
     """
+    # To track loss values
+    loss_curve = []
+
     for epoch in range(epochs):
-        '''
-        TODO: Implement training pipeline for each example
-        '''
+        total_loss = 0
 
-        # Forward pass - wtih mlp.ileri
+        for x, y in zip(inputs, targets):
+            # Convert the input and target to `gergen` objects
+            x_gergen = gergen(x)
+            y_gergen = gergen(y)
 
-        # Calculate Loss - with cross_entropy
+            # Forward pass: predict with the MLP
+            predictions = mlp.ileri(x_gergen)
 
-        loss = None
+            # Compute the loss via cross-entropy
+            loss = cross_entropy(predictions.veri, y_gergen.veri)
 
-        # Backward pass - Compute gradients for example
+            # Backward pass: calculate gradients using `turev_al`
+            predictions.turev_al(1)
 
-        # Update parameters
+            # Update parameters of hidden and output layers
+            for layer in [mlp.hidden_layer, mlp.output_layer]:
+                for param in [layer.weights, layer.biases]:
+                    if param.requires_grad:
+                        grad_adjusted = [
+                            value - learning_rate * grad
+                            for value, grad in zip(param.veri, param.turev.veri)
+                        ]
+                        param.turev = gergen(grad_adjusted)
 
-        # Reset gradients
+            # Accumulate the loss for this batch
+            total_loss += loss
 
-        # Print epoch loss here if desired
+        # Append the average loss for this epoch
+        average_loss = total_loss / len(inputs)
+        loss_curve.append(average_loss)
+        print(f"Epoch {epoch + 1}/{epochs}: Loss = {average_loss}")
 
-        print("Epoch: {}, Loss: {}".format(epoch, loss))
+    return loss_curve
 
-    # return mlp, loss_history
