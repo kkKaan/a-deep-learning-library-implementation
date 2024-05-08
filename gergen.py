@@ -3,6 +3,8 @@ import math
 from typing import Union
 import matplotlib.pyplot as plt
 
+# from the2 import *
+
 
 def cekirdek(sayi: int):
     # Sets the seed for random number generation
@@ -1398,33 +1400,61 @@ class gergen:
 
     def turev_al(self, grad_output=1):
         """
-        Computes the backward pass of the operation that produced this gergen object.
-
-        Parameters:
-            grad_output: The gradient of the loss w.r.t the output of the operation.
-
-        Returns:
-            None: Gradients are propagated recursively.
+        TODO: Implement the backward pass for the gergen object
         """
-        # If the current gergen doesn't require gradient calculation
-        if not self.requires_grad:
-            return
+        self.turev = grad_output
 
-        # If no operation produced this gergen, it's a leaf node
-        if self.operation is None:
-            self.turev = grad_output
+        if self.operation == None:
+            return grad_output  # not sure
+        elif type(self.operation) == Add or type(self.operation) == IcCarpim:
+            g1, g2 = self.operation.geri(self.turev)
+            self.operation.operands[0].turev_al(g1)
+            self.operation.operands[1].turev_al(g2)
+        elif type(self.operation) == ReLU or type(self.operation) == Softmax:
+            g1 = self.operation.geri(self.turev)
+            self.operation.operands[0].turev_al(g1)
+        elif len(self.operation.operands) == 1:
+            print(type(self.operation))
+            #g1 = self.operation.geri(self.turev)
+            self.operation.operands[0].turev_al(grad_output)
+        elif len(self.operation.operands) == 2:
+            print(type(self.operation))
+            #g1, g2 = self.operation.geri(self.turev)
+            self.operation.operands[0].turev_al(grad_output)
+            self.operation.operands[1].turev_al(grad_output)
         else:
-            # Get gradients of the input(s) by calling geri()
-            # print("grad_output: ", grad_output)
-            gradients = self.operation.geri(grad_output)
+            raise NotImplementedError("Operation not implemented yet" + str(self.operation))
+        self.operation = None
 
-            # If there are multiple inputs (a tuple of gradients)
-            if isinstance(gradients, tuple):
-                for inp, grad in zip(self.operation.operands, gradients):
-                    if inp.requires_grad:
-                        inp.turev_al(grad)
-            else:
-                # Single input operation
-                operand = self.operation.operands[0]
-                if operand.requires_grad:
-                    operand.turev_al(gradients)
+    # def turev_al(self, grad_output=1):
+    #     """
+    #     Computes the backward pass of the operation that produced this gergen object.
+
+    #     Parameters:
+    #         grad_output: The gradient of the loss w.r.t the output of the operation.
+
+    #     Returns:
+    #         None: Gradients are propagated recursively.
+    #     """
+    #     # If the current gergen doesn't require gradient calculation
+    #     if not self.requires_grad:
+    #         return
+
+    #     # If no operation produced this gergen, it's a leaf node
+    #     if self.operation is None:
+    #         self.turev = grad_output
+    #     else:
+    #         # Get gradients of the input(s) by calling geri()
+    #         # print("grad_output: ", grad_output)
+    #         gradients = self.operation.geri(grad_output)
+
+    #         # If there are multiple inputs (a tuple of gradients)
+    #         if isinstance(gradients, tuple):
+    #             for inp, grad in zip(self.operation.operands, gradients):
+    #                 if inp.requires_grad:
+    #                     inp.turev_al(grad)
+    #         else:
+    #             # Single input operation
+    #             operand = self.operation.operands[0]
+    #             if operand.requires_grad:
+    #                 operand.turev_al(gradients)

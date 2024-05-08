@@ -256,22 +256,22 @@ def main():
 
     # print("---geri---")
 
-    # # gergen softmax
+    # gergen softmax
     # print("gergen softmax")
     # g1 = gergen([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
     # ones3_3 = (gergen(g1.custom_zeros(g1.boyut())) + 1).veri
     # softmax = Softmax()
     # res = softmax.ileri(g1, dim=1)
     # print("result of gergen softmax: \n", res)
-    # back = softmax.geri(gergen(ones3_3))
+    # back = softmax.geri(2)
     # print("gradient of the tensor: \n", back)
 
     # print("#############################################")
 
-    # # torch softmax
+    # torch softmax
     # print("torch softmax")
-    # t1 = torch.tensor([[1, 2, 3], [4, 5, 6], [7, 8, 9]], dtype=torch.float64, requires_grad=True)
-    # t_softmax = torch.nn.Softmax(dim=1)
+    # t1 = torch.tensor([1, 2, 3, 4, 5, 6, 7, 8, 9], dtype=torch.float64, requires_grad=True)
+    # t_softmax = torch.nn.Softmax()
     # t_res = t_softmax(t1)
     # print("result of torch softmax: \n", t_res)
     # grad_tensor = torch.ones_like(t_res)
@@ -329,7 +329,7 @@ if __name__ == "__main__":
     cekirdek(2)
     # data_file = "./path_to_data"
     # main(data_file)
-    # main()
+    # main()
 
     # Load the data
     train_data_path = "train_data.csv"

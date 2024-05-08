@@ -64,7 +64,7 @@ class Softmax(Operation):
             result.append(softmax_vals)
 
         result = result if dim == 1 else gergen(result).devrik().veri  # Transpose back if dim is 0
-        return gergen(result, operation=self, requires_grad=True)
+        return gergen(result, operation=self, requires_grad=False)
 
     def geri(self, grad_input):
         """
@@ -76,6 +76,21 @@ class Softmax(Operation):
         Returns:
             gergen: Gradient of the Softmax function.
         """
+        softmax_output = self.ileri(self.x, self.dim).veri
+        result = []
+
+        # Compute the Jacobian matrix for each row in the softmax output
+        for outputs in softmax_output:
+            jacobian_matrix = [
+                [s_i * (int(i == j) - s_j) for j, s_j in enumerate(outputs)] for i, s_i in enumerate(outputs)
+            ]
+            result.append(jacobian_matrix)
+
+        # Transpose back if dim isn't 1 to match the input's original shape
+        if self.dim != 1:
+            result = [list(row) for row in zip(*result)]
+
+        return gergen(result[0]) * grad_input
 
         ### OLD IMPLEMENTATION ###
         # softmax_output = self.ileri(self.x, self.dim).veri
@@ -115,7 +130,7 @@ class Katman:
 
         # Initialize weights and biases
         # Using He initialization if activation is 'relu', otherwise Xavier
-        stddev = math.sqrt(2. / input_size) if activation == 'relu' else math.sqrt(1. / input_size)
+        stddev = math.sqrt(2. / input_size) if activation == ReLU else math.sqrt(1. / input_size)
         self.weights = rastgele_gercek((output_size, input_size)) * stddev
         self.biases = rastgele_gercek((output_size, 1))
         # print("weights: \n", self.weights)
@@ -144,10 +159,10 @@ class Katman:
         # print("after adding biases: ", z)
 
         # Apply activation function if specified
-        if self.activation == 'relu':
+        if self.activation == ReLU:
             relu_op = ReLU()
             z = relu_op.ileri(z)
-        elif self.activation == 'softmax':
+        elif self.activation == Softmax:
             softmax_op = Softmax()
             z = softmax_op.ileri(z, dim=1)
 
@@ -172,8 +187,8 @@ class MLP:
         Returns:
             None
         """
-        self.hidden_layer = Katman(input_size, hidden_size, activation='relu')
-        self.output_layer = Katman(hidden_size, output_size, activation='softmax')
+        self.hidden_layer = Katman(input_size, hidden_size, activation=ReLU)
+        self.output_layer = Katman(hidden_size, output_size, activation=Softmax)
 
     def ileri(self, x):
         """
@@ -231,14 +246,16 @@ def egit(mlp, inputs, targets, epochs, learning_rate):
         total_loss = 0
         # print("input size: ", inputs.boyut())
         # print("target size: ", targets.boyut())
-
-        for i in range(inputs.boyut()[0]):
+        # print("input size: ", inputs.boyut()) # 20.000
+        for i in range(50):
             # Convert the input and target to `gergen` objects
-            x_gergen = inputs[i]
+            # x_gergen = gergen([inputs[i]])
+            # y_gergen = gergen([targets[i]])
             # print("type of x_gergen: ", type(x_gergen))
             # print("x_gergen shape: ", x_gergen.boyut())
-            x_gergen.boyutlandir((x_gergen.boyut()[0], 1))
+            x_gergen = inputs[i]
             y_gergen = targets[i]
+            x_gergen.boyutlandir((x_gergen.boyut()[0], 1))
             y_gergen.boyutlandir((y_gergen.boyut()[0], 1))
 
             # Forward pass: predict with the MLP
@@ -247,17 +264,17 @@ def egit(mlp, inputs, targets, epochs, learning_rate):
             # Compute the loss via cross-entropy
             loss = cross_entropy(predictions, y_gergen)
 
+            grad = predictions - y_gergen
+            print("grad: ", grad)
+
             # Backward pass: calculate gradients using `turev_al`
-            predictions.turev_al(1)
+            predictions.turev_al(grad)
 
             # Update parameters of hidden and output layers
-            for layer in [mlp.hidden_layer, mlp.output_layer]:
-                for param in [layer.weights, layer.biases]:
-                    if param.requires_grad:
-                        grad_adjusted = [
-                            value - learning_rate * grad for value, grad in zip(param.veri, param.turev.veri)
-                        ]
-                        param.turev = gergen(grad_adjusted)
+            mlp.hidden_layer.weights -= learning_rate * mlp.hidden_layer.weights.turev
+            mlp.hidden_layer.biases -= learning_rate * mlp.hidden_layer.biases.turev
+            mlp.output_layer.weights -= learning_rate * mlp.output_layer.weights.turev
+            mlp.output_layer.biases -= learning_rate * mlp.output_layer.biases.turev
 
             # Accumulate the loss for this batch
             total_loss += loss
