@@ -1,71 +1,115 @@
 import pandas as pd
-import io
 import numpy as np
 import torch
-from sklearn.preprocessing import LabelBinarizer, OneHotEncoder
+from sklearn.preprocessing import LabelBinarizer
+import matplotlib.pyplot as plt
 
 from gergen import *
 from the2 import *
 
 
-def train(mlp, inputs, targets, epochs, learning_rate):
+def test(mlp, inputs, targets):
     """
-    Train the provided MLP model using the input data and targets.
+    Tests the MLP model with the input data and computes the loss.
 
     Parameters:
         mlp (MLP): The MLP model with an `ileri` method for forward propagation.
-        inputs (list or generator): Input data to train on (each sample should be formatted as a gergen object).
-        targets (list or generator): Target data to train on (each sample should be formatted as a gergen object).
-        epochs (int): Number of epochs to train the model.
-        learning_rate (float): Learning rate for the optimizer.
-    
+        inputs (list or generator): Input data to test (each sample should be formatted as a gergen object).
+        targets (list or generator): Expected outputs (each target should be formatted as a gergen object).
+
     Returns:
-        None
+        float: The computed average loss over the test dataset.
+        float: The accuracy of the model on the test dataset.
     """
-    pass
+    total_loss = 0
+    correct = 0
 
+    for i in range(len(inputs)):
+        # Same operations as in the training loop without the backward pass
+        x_gergen = gergen(inputs[i]).devrik()
+        y_gergen = gergen(targets[i]).devrik()
 
-def test(mlp, inputs, targets):
-    """
-    TODO: Implement the testing pipeline
-    """
-    loss = None
+        # Normalize the input data
+        x_gergen = x_gergen / 255
 
-    print("Test Loss: {}".format(loss))
-    return loss
+        # Forward pass: predict with the MLP
+        predictions = mlp.ileri(x_gergen)
+
+        # Compute the loss via cross-entropy
+        loss = cross_entropy(predictions, y_gergen)
+        total_loss += loss
+
+        # Determine the predicted label by choosing the class with the highest probability
+        predicted_index = predictions.devrik().veri[0].index(max(predictions.devrik().veri[0]))
+        predicted_class = predicted_index
+        actual_index = y_gergen.devrik().veri[0].index(max(y_gergen.devrik().veri[0]))
+        actual_class = actual_index
+
+        print("predicted_index: ", predicted_index)
+        print("actual_index: ", actual_index)
+
+        if predicted_class == actual_class:
+            correct += 1
+
+    # Calculate average loss and accuracy
+    average_loss = total_loss / len(inputs)
+    accuracy = correct / len(inputs)
+
+    print(f"Test Loss: {average_loss}")
+    print(f"Test Accuracy: {accuracy * 100:.3f}%")
+
+    return average_loss, accuracy
 
 
 def data_preprocessing(data_file):
     """
-    TODO:    DATA PREPROCESSING
+    Preprocess the dataset provided in CSV format.
+    
+    Args:
+        data_file (str): Path to the CSV file containing the dataset.
+        
+    Returns:
+        data (pd.DataFrame): Feature data
+        labels (np.ndarray): One-hot encoded labels
     """
-    # Load the data
-    data = pd.read_csv(data_file)
+    # Load the data into a Pandas DataFrame
+    df = pd.read_csv(data_file)
 
-    # Get the first column as labels (You can use one-hot encoding if needed (You can use sklearn or pandas for this))
-    labels = data.iloc[:, 0]
-    # print(labels)
+    # Extract the first column as labels
+    labels = df.iloc[:, 0]
 
-    # Get the remaining columns as data
-    data = data.iloc[:, 1:]
-    # print(data)
-    data = data.divide(255)  # Normalize the data
+    # One-hot encode the labels using LabelBinarizer
+    lb = LabelBinarizer()
+    one_hot_labels = lb.fit_transform(labels)
 
-    # One-hot encoding
-    encoder = OneHotEncoder()
-    labels = encoder.fit_transform(labels.values.reshape(-1, 1)).toarray()
+    # Extract the remaining columns as feature data
+    data = df.iloc[:, 1:]
 
-    # Convert the data and labels to gergen objects
-    # print(type(data.values.tolist()))
-    # print(labels.tolist())
-    data_gergen = gergen(data.values.tolist())
-    labels = gergen(labels.tolist())
-
-    # Return the data and labels
-    return data_gergen, labels
+    return data, one_hot_labels
 
 
-def main():
+def plot_loss_curve(loss_list):
+    """
+    Plots the loss curve given a list of loss values.
+    
+    Parameters:
+        loss_list (list of floats): The list containing the loss values after each epoch.
+    """
+    plt.figure(figsize=(8, 6))
+    plt.plot(range(1, len(loss_list) + 1), loss_list, marker='o', linestyle='-', color='blue')
+    plt.title("Training Loss Curve")
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
+    plt.xticks(range(1, len(loss_list) + 1))
+    plt.grid(True)
+    plt.show()
+
+
+def unit_tests():
+    """
+    This function contains some discrete tests inside comments, which can be used to test the 
+    specific parts of the code. Uncomment the desired test and run the function to see the results.
+    """
     # # Some basic tests for gergen class
     # g1 = rastgele_dogal((2,2))
     # g2 = gergen([1,2,3])
@@ -325,15 +369,78 @@ def main():
     pass
 
 
+def optimize_hyperparameters(learning_rates, hidden_sizes, epochs, train_data_path, test_data_path):
+    """
+    This function is used to optimize the hyperparameters of the MLP model.
+
+    Parameters:
+        learning_rates (list): List of learning rates to test.
+        hidden_sizes (list): List of hidden layer sizes to test.
+        epochs (int): Number of training epochs.
+        train_data_path (str): Path to the training data file.
+        test_data_path (str): Path to the test data file.
+    """
+    # results is dictionary mapping tuples of the form
+    # (learning_rate, hidden_layer_size) to tuples of the form
+    # (training_loss, test_loss).
+    results = {}
+    best_loss = 10  # The lowest test loss that we have seen so far.
+    best_model = None  # The MLP object that achieved the lowest test loss.
+    best_loss_list = None  # The loss list for the best model
+    best_lr = None  # The learning rate for the best model
+    best_hl = None  # The hidden layer size for the best model
+
+    train_data, train_labels = data_preprocessing(train_data_path)
+    test_data, test_labels = data_preprocessing(test_data_path)
+
+    data = train_data.values.tolist()
+    labels = train_labels.tolist()
+
+    for lr in learning_rates:
+
+        for hl in hidden_sizes:
+
+            # Create and train a new MLP instance
+            mlp = MLP(input_size=input_size, hidden_size=hl, output_size=output_size)
+            loss_list = egit(mlp, data, labels, epochs, lr)
+            train_loss = loss_list[-1]
+
+            # Predict values for test set and calculate test loss
+            test_loss, test_accuracy = test(mlp, test_data, test_labels)
+
+            print(
+                f"learning rate={lr} and hidden layer size={hl} provided train_loss={train_loss:.3f} and test_loss={test_loss:.3f}"
+            )
+
+            # Save the results
+            results[(lr, hl)] = (train_loss, test_loss)
+            if test_loss < best_loss:
+                best_lr = lr
+                best_hl = hl
+                best_loss = test_loss
+                best_model = mlp
+                best_loss_list = loss_list
+
+    print(f'\nLowest test loss achieved: {best_loss} with params hl={best_hl} and lr={best_lr}')
+
+
 if __name__ == "__main__":
-    cekirdek(2)
-    # data_file = "./path_to_data"
-    # main(data_file)
-    # main()
+    cekirdek(2)  # Set the seed for reproducibility
+    # unit_tests() # To check specific functions
 
     # Load the data
     train_data_path = "train_data.csv"
+    test_data_path = "test_data.csv"
     data, labels = data_preprocessing(train_data_path)
+    test_data, test_labels = data_preprocessing(test_data_path)
+
+    # convert data to list
+
+    data = data.values.tolist()
+    labels = labels.tolist()
+    test_data = test_data.values.tolist()
+    test_labels = test_labels.tolist()
+
     # print("type data: ", type(data))
     # print("type labels: ", type(labels))
 
@@ -344,8 +451,20 @@ if __name__ == "__main__":
     mlp = MLP(input_size=input_size, hidden_size=hidden_size, output_size=output_size)
 
     # Train the MLP using your preferred training loop
-    epochs = 5
+    epochs = 10
     learning_rate = 0.01
 
     # Egit
-    egit(mlp, data, labels, epochs, learning_rate)
+    loss_list = egit(mlp, data, labels, epochs, learning_rate)
+
+    # Plot the loss curve
+    plot_loss_curve(loss_list)
+
+    # Test the MLP
+    test_loss, accuracy = test(mlp, test_data, test_labels)
+
+    # For further optimizations
+    learning_rates = [1e-2, 1e-3, 1e-4, 1e-5]
+    hidden_sizes = [5, 10, 30]
+    epochs = 10
+    optimize_hyperparameters(learning_rates, hidden_sizes, epochs, train_data_path, test_data_path)

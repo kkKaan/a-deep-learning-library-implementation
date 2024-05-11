@@ -1,9 +1,6 @@
-import random
 import math
-from typing import Union
-import matplotlib.pyplot as plt
 
-from gergen import *
+from gergen import gergen, Operation, IcCarpim, apply_elementwise, rastgele_gercek
 
 
 class ReLU(Operation):
@@ -34,7 +31,7 @@ class ReLU(Operation):
             gergen: Gradient of the ReLU function.
         """
         grad = apply_elementwise(self.x, lambda val: 1 if val > 0 else 0)
-        result_gergen = gergen(grad, operation=self)
+        result_gergen = gergen(grad)
         return grad_input * result_gergen
 
 
@@ -55,7 +52,7 @@ class Softmax(Operation):
 
         # Compute the softmax of the input x
         result = []
-        data = x.veri if dim == 1 else x.devrik().veri  # Transpose if dim is 0
+        data = x.veri if dim == 0 else x.devrik().veri  # Transpose if dim is 0
 
         for row in data:
             exps = [math.exp(val) for val in row]
@@ -63,8 +60,8 @@ class Softmax(Operation):
             softmax_vals = [exp_val / sum_exps for exp_val in exps]
             result.append(softmax_vals)
 
-        result = result if dim == 1 else gergen(result).devrik().veri  # Transpose back if dim is 0
-        return gergen(result, operation=self, requires_grad=False)
+        result = result if dim == 0 else gergen(result).devrik().veri  # Transpose back if dim is 0
+        return gergen(result, operation=self, requires_grad=True)
 
     def geri(self, grad_input):
         """
@@ -76,46 +73,23 @@ class Softmax(Operation):
         Returns:
             gergen: Gradient of the Softmax function.
         """
-        softmax_output = self.ileri(self.x, self.dim).veri
-        result = []
+        return grad_input  # Since we are taking this derivative with cross entropy loss inside training loop
 
-        # Compute the Jacobian matrix for each row in the softmax output
-        for outputs in softmax_output:
-            jacobian_matrix = [
-                [s_i * (int(i == j) - s_j) for j, s_j in enumerate(outputs)] for i, s_i in enumerate(outputs)
-            ]
-            result.append(jacobian_matrix)
-
-        # Transpose back if dim isn't 1 to match the input's original shape
-        if self.dim != 1:
-            result = [list(row) for row in zip(*result)]
-
-        return gergen(result[0]) * grad_input
-
-        ### OLD IMPLEMENTATION ###
         # softmax_output = self.ileri(self.x, self.dim).veri
         # result = []
 
-        # if isinstance(grad_input, (int, float)):
-        #     grad_input = gergen(grad_input)
+        # # Compute the Jacobian matrix for each row in the softmax output
+        # for outputs in softmax_output:
+        #     jacobian_matrix = [
+        #         [s_i * (int(i == j) - s_j) for j, s_j in enumerate(outputs)] for i, s_i in enumerate(outputs)
+        #     ]
+        #     result.append(jacobian_matrix)
 
-        # # print("grad_input: ", grad_input)
-        # # print("softmax_output: ", softmax_output)
-
-        # for i, (outputs, grads) in enumerate(zip(softmax_output, grad_input.veri)):
-        #     # Calculate the gradient component for each output
-        #     gradient_components = []
-        #     for j, (s_j, g_j) in enumerate(zip(outputs, grads)):
-        #         s_i = outputs[i]
-        #         gradient_component = s_i * (int(i == j) - s_j) * g_j
-        #         gradient_components.append(gradient_component)
-        #     result.append(gradient_components)
-
-        # # Return as transposed if dim is not 1 to match the input shape
+        # # Transpose back if dim isn't 1 to match the input's original shape
         # if self.dim != 1:
-        #     result = [list(x) for x in zip(*result)]
+        #     result = [list(row) for row in zip(*result)]
 
-        # return gergen(result, operation=self)
+        # return gergen(result[0]) * grad_input
 
 
 class Katman:
@@ -133,8 +107,6 @@ class Katman:
         stddev = math.sqrt(2. / input_size) if activation == ReLU else math.sqrt(1. / input_size)
         self.weights = rastgele_gercek((output_size, input_size)) * stddev
         self.biases = rastgele_gercek((output_size, 1))
-        # print("weights: \n", self.weights)
-        # print("biases: \n", self.biases)
 
     def ileri(self, x):
         """
@@ -151,12 +123,7 @@ class Katman:
 
         # Compute the matrix multiplication of input x and weights
         z = matrix_multiplication.ileri(self.weights, x)
-
-        # print("after matrix mult: ", z)
-
         z = z + self.biases
-
-        # print("after adding biases: ", z)
 
         # Apply activation function if specified
         if self.activation == ReLU:
@@ -221,8 +188,8 @@ def cross_entropy(y_pred, y_true):
     n = y_pred.boyut()[0]
 
     loss = (y_true * (y_pred + epsilon).ln()).topla()
-    loss = loss / -n
-    return loss
+    loss = loss / -n  # Average loss over all samples to obtain smaller losses
+    return loss.veri
 
 
 def egit(mlp, inputs, targets, epochs, learning_rate):
@@ -244,19 +211,20 @@ def egit(mlp, inputs, targets, epochs, learning_rate):
 
     for epoch in range(epochs):
         total_loss = 0
-        # print("input size: ", inputs.boyut())
         # print("target size: ", targets.boyut())
-        # print("input size: ", inputs.boyut()) # 20.000
-        for i in range(50):
+        # print("input size: ", inputs.boyut()) # 20.000, MNIST small dataset
+        for i in range(len(inputs)):
             # Convert the input and target to `gergen` objects
-            # x_gergen = gergen([inputs[i]])
-            # y_gergen = gergen([targets[i]])
-            # print("type of x_gergen: ", type(x_gergen))
-            # print("x_gergen shape: ", x_gergen.boyut())
             x_gergen = inputs[i]
             y_gergen = targets[i]
-            x_gergen.boyutlandir((x_gergen.boyut()[0], 1))
-            y_gergen.boyutlandir((y_gergen.boyut()[0], 1))
+            # print("x_gergen type: ", type(x_gergen))
+            # print("y_gergen type: ", type(y_gergen))
+
+            x_gergen = gergen(x_gergen).devrik()
+            y_gergen = gergen(y_gergen).devrik()
+
+            # Normalize the input data to prevent overflow
+            x_gergen = x_gergen / 255
 
             # Forward pass: predict with the MLP
             predictions = mlp.ileri(x_gergen)
@@ -265,16 +233,30 @@ def egit(mlp, inputs, targets, epochs, learning_rate):
             loss = cross_entropy(predictions, y_gergen)
 
             grad = predictions - y_gergen
-            print("grad: ", grad)
+            grad = grad / predictions.boyut()[0]
+            # print("grad: ", grad)
 
             # Backward pass: calculate gradients using `turev_al`
             predictions.turev_al(grad)
 
             # Update parameters of hidden and output layers
-            mlp.hidden_layer.weights -= learning_rate * mlp.hidden_layer.weights.turev
-            mlp.hidden_layer.biases -= learning_rate * mlp.hidden_layer.biases.turev
-            mlp.output_layer.weights -= learning_rate * mlp.output_layer.weights.turev
-            mlp.output_layer.biases -= learning_rate * mlp.output_layer.biases.turev
+            mlp.hidden_layer.weights = mlp.hidden_layer.weights - learning_rate * mlp.hidden_layer.weights.turev
+            mlp.hidden_layer.biases = mlp.hidden_layer.biases - learning_rate * mlp.hidden_layer.biases.turev
+            # mlp.hidden_layer.weights.turev = None
+            # mlp.hidden_layer.biases.turev = None
+            mlp.hidden_layer.weights.requires_grad = False
+            mlp.hidden_layer.biases.requires_grad = False
+            mlp.hidden_layer.weights.operation = None
+            mlp.hidden_layer.biases.operation = None
+
+            mlp.output_layer.weights = mlp.output_layer.weights - learning_rate * mlp.output_layer.weights.turev
+            mlp.output_layer.biases = mlp.output_layer.biases - learning_rate * mlp.output_layer.biases.turev
+            # mlp.output_layer.weights.turev = None
+            # mlp.output_layer.biases.turev = None
+            mlp.output_layer.weights.requires_grad = False
+            mlp.output_layer.biases.requires_grad = False
+            mlp.output_layer.weights.operation = None
+            mlp.output_layer.biases.operation = None
 
             # Accumulate the loss for this batch
             total_loss += loss
