@@ -26,18 +26,44 @@ class MLP_torch(nn.Module):
 
 
 def data_preprocessing_torch(file_path):
+    """
+    Preprocess the dataset provided in CSV format for PyTorch.
+
+    Parameters:
+        file_path (str): Path to the CSV file containing the dataset.
+    
+    Returns:
+        torch.Tensor: Feature data
+        torch.Tensor: Correct labels
+    """
     df = pd.read_csv(file_path)
     labels = df.iloc[:, 0].values
     features = df.iloc[:, 1:]
+
     lb = LabelBinarizer()
     lb.fit(labels)
     labels_indices = lb.transform(labels).argmax(axis=1)
+
     data_tensor = torch.tensor(features.values, dtype=torch.float32) / 255
     label_tensor = torch.tensor(labels_indices, dtype=torch.int64)
     return data_tensor, label_tensor
 
 
 def train_torch(mlp, inputs, targets, epochs, learning_rate, batch_size=32):
+    """
+    Trains the provided MLP model using the input data and targets.
+
+    Parameters:
+        mlp (MLP_torch): The MLP model to train.
+        inputs (torch.Tensor): Input data to train on.
+        targets (torch.Tensor): Expected outputs.
+        epochs (int): Number of epochs to run.
+        learning_rate (float): Step size for gradient descent.
+        batch_size (int): Number of samples to process in each batch.
+
+    Returns:
+        list: The loss values after each epoch to visualize the learning progress.
+    """
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(mlp.parameters(), lr=learning_rate)
     loss_curve = []
@@ -60,6 +86,18 @@ def train_torch(mlp, inputs, targets, epochs, learning_rate, batch_size=32):
 
 
 def test_torch(mlp, inputs, targets):
+    """
+    Tests the MLP model with the input data and computes the loss.
+
+    Parameters:
+        mlp (MLP_torch): The MLP model to test.
+        inputs (torch.Tensor): Input data to test.
+        targets (torch.Tensor): Expected outputs.
+
+    Returns:
+        float: The computed average loss over the test dataset.
+        float: The accuracy of the model on the test dataset.
+    """
     criterion = nn.CrossEntropyLoss()
     with torch.no_grad():
         outputs = mlp(inputs)
@@ -67,8 +105,10 @@ def test_torch(mlp, inputs, targets):
         _, predicted = torch.max(outputs, 1)
         correct = (predicted == targets).sum().item()
         accuracy = correct / len(inputs)
+
     print(f"Test Loss: {loss.item()}")
     print(f"Test Accuracy: {accuracy * 100:.3f}%")
+
     return loss.item(), accuracy
 
 
