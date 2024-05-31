@@ -5,7 +5,7 @@ from sklearn.preprocessing import LabelBinarizer
 import matplotlib.pyplot as plt
 
 from gergen import *
-from the2 import *
+from train import *
 
 
 def test(mlp, inputs, targets):

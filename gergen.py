@@ -2,7 +2,7 @@ import random
 import math
 from typing import Union
 
-from the2 import Softmax, ReLU
+from train import Softmax, ReLU
 
 
 def cekirdek(sayi: int):
